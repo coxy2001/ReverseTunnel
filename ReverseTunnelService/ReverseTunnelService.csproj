@@ -73,6 +73,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Config.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -99,12 +100,6 @@
     <EmbeddedResource Include="ReverseTunnelService.resx">
       <DependentUpon>ReverseTunnelService.cs</DependentUpon>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ReverseTunnel\ReverseTunnel.csproj">
-      <Project>{2B1841DA-E084-41A9-8652-5955C1BD47DB}</Project>
-      <Name>ReverseTunnel</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

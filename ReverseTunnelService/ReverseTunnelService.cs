@@ -1,16 +1,15 @@
 ﻿using Microsoft.Win32;
 using Renci.SshNet;
+using System;
 using System.Diagnostics;
-using System.IO;
 using System.ServiceProcess;
-using System.Text.Json;
 
 namespace ReverseTunnelService
 {
 	public partial class ReverseTunnelService : ServiceBase
 	{
-		SshClient client;
-		ForwardedPortRemote port;
+		private SshClient client;
+		private ForwardedPortRemote port;
 
 		public ReverseTunnelService()
 		{
@@ -19,7 +18,7 @@ namespace ReverseTunnelService
 
 		private void Connect()
 		{
-			this.LogEvent("Connecting", EventLogEntryType.Information);
+			LogEvent("Connecting", EventLogEntryType.Information);
 			try
 			{
 				string configPath;
@@ -29,13 +28,13 @@ namespace ReverseTunnelService
 					configPath = key.GetValue("ImagePath").ToString();
 				}
 
-				this.LogEvent(configPath, EventLogEntryType.Information);
+				LogEvent(configPath, EventLogEntryType.Information);
 
 				string[] parts = configPath.Replace("\"", string.Empty).Split('\\');
 				parts[parts.Length - 1] = "config.json";
 				configPath = string.Join("\\", parts);
 
-				this.LogEvent(configPath, EventLogEntryType.Information);
+				LogEvent(configPath, EventLogEntryType.Information);
 
 				Config config = Config.LoadConfig(configPath);
 
@@ -46,26 +45,27 @@ namespace ReverseTunnelService
 				client.AddForwardedPort(port);
 				port.Start();
 
-				this.LogEvent("Connect Success", EventLogEntryType.Information);
+				LogEvent("Connect Success", EventLogEntryType.Information);
 			}
-			catch
+			catch (Exception ex)
 			{
-				this.LogEvent("Connect Failed", EventLogEntryType.Error);
+				LogEvent("Connect Failed", EventLogEntryType.Error);
+				LogEvent(ex.ToString(), EventLogEntryType.Error);
 			}
 		}
 
 		private void Disconnect()
 		{
-			this.LogEvent("Disconnecting", EventLogEntryType.Information);
+			LogEvent("Disconnecting", EventLogEntryType.Information);
 			if (client != null && client.IsConnected)
 			{
 				port.Stop();
 				client.Disconnect();
-				this.LogEvent("Disconnect Success", EventLogEntryType.Information);
+				LogEvent("Disconnect Success", EventLogEntryType.Information);
 			}
 			else
 			{
-				this.LogEvent("Not connected", EventLogEntryType.Information);
+				LogEvent("Not connected", EventLogEntryType.Information);
 			}
 		}
 
@@ -82,7 +82,9 @@ namespace ReverseTunnelService
 		protected override void OnStart(string[] args)
 		{
 			if (!EventLog.SourceExists("ReverseTunnelService"))
+			{
 				EventLog.CreateEventSource("ReverseTunnelService", "Application");
+			}
 
 			Connect();
 		}
@@ -105,36 +107,6 @@ namespace ReverseTunnelService
 		protected override void OnShutdown()
 		{
 			Disconnect();
-		}
-	}
-
-	public class Config
-	{
-		public string sshHost { get; set; }
-		public int sshPort { get; set; }
-		public string sshUsername { get; set; }
-		public string sshPassword { get; set; }
-
-		public uint remotePort { get; set; }
-		public string localAddress { get; set; }
-		public uint localPort { get; set; }
-
-		public static Config LoadConfig(string path)
-		{
-			using (StreamReader r = new StreamReader(path))
-			{
-				string json = r.ReadToEnd();
-				return JsonSerializer.Deserialize<Config>(json);
-			}
-		}
-
-		public static void SaveConfig(Config config)
-		{
-			string jsonString = JsonSerializer.Serialize(config, new JsonSerializerOptions() { WriteIndented = true });
-			using (StreamWriter outputFile = new StreamWriter("config.json"))
-			{
-				outputFile.WriteLine(jsonString);
-			}
 		}
 	}
 }

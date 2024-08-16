@@ -1,7 +1,7 @@
-﻿using System;
-using System.IO;
+﻿using ReverseTunnelService;
+using System;
+using System.Diagnostics;
 using System.ServiceProcess;
-using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -26,6 +26,35 @@ namespace ReverseTunnel
 			numericLocalPort.Value = config.localPort;
 		}
 
+		private string getLastError()
+		{
+			EventLog eventLog = new EventLog
+			{
+				Source = "ReverseTunnelService",
+				Log = "Application"
+			};
+			int i = eventLog.Entries.Count;
+			bool breakNext = false;
+			while (i > 0)
+			{
+				i--;
+				EventLogEntry entry = eventLog.Entries[i];
+				if (entry.Source == "ReverseTunnelService")
+				{
+					if (entry.EntryType == EventLogEntryType.Error)
+					{
+						return entry.Message;
+					}
+					if (breakNext)
+					{
+						break;
+					}
+					breakNext = true;
+				}
+			}
+			return string.Empty;
+		}
+
 		private void buttonToggleConnection_Click(object sender, EventArgs e)
 		{
 			config.sshHost = textBoxSshHost.Text;
@@ -44,65 +73,38 @@ namespace ReverseTunnel
 				buttonToggleConnection.Enabled = false;
 				buttonToggleConnection.Refresh();
 
-				try
+				ServiceController controller = new ServiceController("ReverseTunnelService");
+
+				if (controller != null)
 				{
-					ServiceController controller = new ServiceController("ReverseTunnelService");
-
-					if (controller != null)
+					if (controller.Status == ServiceControllerStatus.Running)
 					{
-						if (controller.Status == ServiceControllerStatus.Running)
-						{
-							controller.Stop();
-							controller.WaitForStatus(ServiceControllerStatus.Stopped);
-						}
-						controller.Start();
-						controller.WaitForStatus(ServiceControllerStatus.Running);
+						controller.Stop();
+						controller.WaitForStatus(ServiceControllerStatus.Stopped);
+					}
+					controller.Start();
+					controller.WaitForStatus(ServiceControllerStatus.Running);
 
-						buttonToggleConnection.Text = "Apply";
+					string lastError = getLastError();
+					if (lastError.Length > 0)
+					{
+						MessageBox.Show(lastError);
+						buttonToggleConnection.Text = "Failed";
 					}
 					else
 					{
-						buttonToggleConnection.Text = "Service not started";
+						buttonToggleConnection.Text = "Apply";
 					}
 				}
-				catch
+				else
 				{
-					buttonToggleConnection.Text = "Failed";
+					buttonToggleConnection.Text = "Service not started";
 				}
+
 				buttonToggleConnection.Enabled = true;
 				buttonToggleConnection.Refresh();
 			});
 		}
 
-	}
-
-	public class Config
-	{
-		public string sshHost { get; set; }
-		public int sshPort { get; set; }
-		public string sshUsername { get; set; }
-		public string sshPassword { get; set; }
-
-		public uint remotePort { get; set; }
-		public string localAddress { get; set; }
-		public uint localPort { get; set; }
-
-		public static Config LoadConfig(string path)
-		{
-			using (StreamReader r = new StreamReader(path))
-			{
-				string json = r.ReadToEnd();
-				return JsonSerializer.Deserialize<Config>(json);
-			}
-		}
-
-		public static void SaveConfig(Config config)
-		{
-			string jsonString = JsonSerializer.Serialize(config, new JsonSerializerOptions() { WriteIndented = true });
-			using (StreamWriter outputFile = new StreamWriter("config.json"))
-			{
-				outputFile.WriteLine(jsonString);
-			}
-		}
 	}
 }
