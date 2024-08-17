@@ -41,9 +41,12 @@ namespace ReverseTunnelService
 				client = new SshClient(config.sshHost, config.sshPort, config.sshUsername, config.sshPassword);
 				client.Connect();
 
-				port = new ForwardedPortRemote(config.remotePort, config.localAddress, config.localPort);
-				client.AddForwardedPort(port);
-				port.Start();
+				foreach (var portForward in config.portForwards)
+				{
+					port = new ForwardedPortRemote(portForward.remotePort, portForward.localAddress, portForward.localPort);
+					client.AddForwardedPort(port);
+					port.Start();
+				}
 
 				LogEvent("Connect Success", EventLogEntryType.Information);
 			}

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 
 namespace ReverseTunnelService
@@ -10,9 +11,7 @@ namespace ReverseTunnelService
 		public string sshUsername { get; set; }
 		public string sshPassword { get; set; }
 
-		public uint remotePort { get; set; }
-		public string localAddress { get; set; }
-		public uint localPort { get; set; }
+		public List<PortForwardConfig> portForwards { get; set; }
 
 		public static Config LoadConfig(string path)
 		{
@@ -30,6 +29,18 @@ namespace ReverseTunnelService
 			{
 				outputFile.WriteLine(jsonString);
 			}
+		}
+	}
+
+	public class PortForwardConfig
+	{
+		public uint remotePort { get; set; }
+		public string localAddress { get; set; }
+		public uint localPort { get; set; }
+
+		public override string ToString()
+		{
+			return $"{this.remotePort}:{this.localAddress}:{this.localPort}";
 		}
 	}
 }

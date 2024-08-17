@@ -6722,15 +6722,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Reverse Tunnel"
-        "ProductCode" = "8:{14E791BC-5328-43F9-BCB1-E3C5D214554A}"
-        "PackageCode" = "8:{0E610833-AFE3-496F-B399-5D72BA1D2C8D}"
+        "ProductCode" = "8:{AF1C22E9-2D65-414D-BB16-D2DA39F1004C}"
+        "PackageCode" = "8:{1830F132-0C95-4F35-B707-2295D09CCBCF}"
         "UpgradeCode" = "8:{B6FC42A6-7150-485F-AAFE-7B038A5E5471}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.1"
+        "ProductVersion" = "8:2.0.0"
         "Manufacturer" = "8:coxy2001"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
@@ -7272,7 +7272,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_4D4739A20E664C4D8A717A53F435ED7D"
             {
-            "SourcePath" = "8:..\\ReverseTunnelService\\obj\\Debug\\ReverseTunnelService.exe"
+            "SourcePath" = "8:..\\ReverseTunnelService\\obj\\Release\\ReverseTunnelService.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_A4DFB6DA05044E49A0E2CB3F45AEFB92"

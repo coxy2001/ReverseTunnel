@@ -1,5 +1,6 @@
 ﻿using ReverseTunnelService;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.ServiceProcess;
 using System.Threading.Tasks;
@@ -21,9 +22,13 @@ namespace ReverseTunnel
 			numericSshPort.Value = config.sshPort;
 			textBoxSshUsername.Text = config.sshUsername;
 			textBoxSshPassword.Text = config.sshPassword;
-			numericRemotePort.Value = config.remotePort;
-			textBoxLocalAddress.Text = config.localAddress;
-			numericLocalPort.Value = config.localPort;
+
+			setPortForwardEnabled(false);
+
+			foreach (object item in config.portForwards)
+			{
+				listBox1.Items.Add(item);
+			}
 		}
 
 		private string getLastError()
@@ -55,23 +60,26 @@ namespace ReverseTunnel
 			return string.Empty;
 		}
 
-		private void buttonToggleConnection_Click(object sender, EventArgs e)
+		private void buttonApply_Click(object sender, EventArgs e)
 		{
 			config.sshHost = textBoxSshHost.Text;
 			config.sshPort = (int)numericSshPort.Value;
 			config.sshUsername = textBoxSshUsername.Text;
 			config.sshPassword = textBoxSshPassword.Text;
-			config.remotePort = (uint)numericRemotePort.Value;
-			config.localAddress = textBoxLocalAddress.Text;
-			config.localPort = (uint)numericLocalPort.Value;
+
+			config.portForwards = new List<PortForwardConfig>();
+			foreach (PortForwardConfig item in listBox1.Items)
+			{
+				config.portForwards.Add(item);
+			}
 
 			Config.SaveConfig(config);
 
 			Task.Run(() =>
 			{
-				buttonToggleConnection.Text = "Restarting...";
-				buttonToggleConnection.Enabled = false;
-				buttonToggleConnection.Refresh();
+				buttonApply.Text = "Restarting...";
+				buttonApply.Enabled = false;
+				buttonApply.Refresh();
 
 				ServiceController controller = new ServiceController("ReverseTunnelService");
 
@@ -89,22 +97,83 @@ namespace ReverseTunnel
 					if (lastError.Length > 0)
 					{
 						MessageBox.Show(lastError);
-						buttonToggleConnection.Text = "Failed";
+						buttonApply.Text = "Failed";
 					}
 					else
 					{
-						buttonToggleConnection.Text = "Apply";
+						buttonApply.Text = "Apply";
 					}
 				}
 				else
 				{
-					buttonToggleConnection.Text = "Service not started";
+					buttonApply.Text = "Service not started";
 				}
 
-				buttonToggleConnection.Enabled = true;
-				buttonToggleConnection.Refresh();
+				buttonApply.Enabled = true;
+				buttonApply.Refresh();
 			});
 		}
 
+		private void setPortForwardEnabled(bool value)
+		{
+			numericRemotePort.Enabled = value;
+			textBoxLocalAddress.Enabled = value;
+			numericLocalPort.Enabled = value;
+			buttonSave.Enabled = value;
+			buttonDelete.Enabled = value;
+		}
+
+		private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			PortForwardConfig selected = (PortForwardConfig)listBox1.SelectedItem;
+			if (selected != null)
+			{
+				numericRemotePort.Value = selected.remotePort;
+				textBoxLocalAddress.Text = selected.localAddress;
+				numericLocalPort.Value = selected.localPort;
+				setPortForwardEnabled(true);
+			}
+		}
+
+		private void buttonSave_Click(object sender, EventArgs e)
+		{
+			int index = listBox1.SelectedIndex;
+			PortForwardConfig selected = (PortForwardConfig)listBox1.Items[index];
+			selected.remotePort = (uint)numericRemotePort.Value;
+			selected.localAddress = textBoxLocalAddress.Text;
+			selected.localPort = (uint)numericLocalPort.Value;
+			listBox1.Items[index] = selected;
+		}
+
+		private void buttonNew_Click(object sender, EventArgs e)
+		{
+			listBox1.Items.Add(new PortForwardConfig()
+			{
+				remotePort = 80,
+				localAddress = "127.0.0.1",
+				localPort = 80
+			});
+			listBox1.SelectedIndex = listBox1.Items.Count - 1;
+			setPortForwardEnabled(true);
+		}
+
+		private void buttonDelete_Click(object sender, EventArgs e)
+		{
+			int index = listBox1.SelectedIndex;
+			listBox1.Items.RemoveAt(index);
+			if (index < listBox1.Items.Count)
+			{
+				listBox1.SelectedIndex = index;
+
+			}
+			else if (listBox1.Items.Count > 0)
+			{
+				listBox1.SelectedIndex = listBox1.Items.Count - 1;
+			}
+			else
+			{
+				setPortForwardEnabled(false);
+			}
+		}
 	}
 }

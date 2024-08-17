@@ -3,7 +3,11 @@
   "sshPort": 22,
   "sshUsername": "",
   "sshPassword": "",
-  "remotePort": 80,
-  "localAddress": "127.0.0.1",
-  "localPort": 80
+  "portForwards": [
+    {
+      "remotePort": 80,
+      "localAddress": "127.0.0.1",
+      "localPort": 80
+    }
+  ]
 }
