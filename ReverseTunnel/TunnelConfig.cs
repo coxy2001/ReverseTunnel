@@ -16,18 +16,26 @@ namespace ReverseTunnel
 		{
 			InitializeComponent();
 
-			config = Config.LoadConfig("config.json");
-
-			textBoxSshHost.Text = config.sshHost;
-			numericSshPort.Value = config.sshPort;
-			textBoxSshUsername.Text = config.sshUsername;
-			textBoxSshPassword.Text = config.sshPassword;
-
-			setPortForwardEnabled(false);
-
-			foreach (object item in config.portForwards)
+			try
 			{
-				listBox1.Items.Add(item);
+				config = Config.LoadConfig();
+
+				textBoxSshHost.Text = config.sshHost;
+				numericSshPort.Value = config.sshPort;
+				textBoxSshUsername.Text = config.sshUsername;
+				textBoxSshPassword.Text = config.sshPassword;
+
+				setPortForwardEnabled(false);
+
+				foreach (object item in config.portForwards)
+				{
+					listBox1.Items.Add(item);
+				}
+			}
+			catch (Exception)
+			{
+				MessageBox.Show("Failed to load config");
+				config = new Config();
 			}
 		}
 
@@ -73,7 +81,7 @@ namespace ReverseTunnel
 				config.portForwards.Add(item);
 			}
 
-			Config.SaveConfig(config);
+			config.SaveConfig();
 
 			Task.Run(() =>
 			{
@@ -88,10 +96,10 @@ namespace ReverseTunnel
 					if (controller.Status == ServiceControllerStatus.Running)
 					{
 						controller.Stop();
-						controller.WaitForStatus(ServiceControllerStatus.Stopped);
+						controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
 					}
 					controller.Start();
-					controller.WaitForStatus(ServiceControllerStatus.Running);
+					controller.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
 
 					string lastError = getLastError();
 					if (lastError.Length > 0)

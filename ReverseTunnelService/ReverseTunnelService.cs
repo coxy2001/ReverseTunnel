@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32;
-using Renci.SshNet;
+﻿using Renci.SshNet;
 using System;
 using System.Diagnostics;
 using System.ServiceProcess;
@@ -21,27 +20,12 @@ namespace ReverseTunnelService
 			LogEvent("Connecting", EventLogEntryType.Information);
 			try
 			{
-				string configPath;
-
-				using (RegistryKey key = Registry.LocalMachine.OpenSubKey("SYSTEM\\CurrentControlSet\\Services\\ReverseTunnelService"))
-				{
-					configPath = key.GetValue("ImagePath").ToString();
-				}
-
-				LogEvent(configPath, EventLogEntryType.Information);
-
-				string[] parts = configPath.Replace("\"", string.Empty).Split('\\');
-				parts[parts.Length - 1] = "config.json";
-				configPath = string.Join("\\", parts);
-
-				LogEvent(configPath, EventLogEntryType.Information);
-
-				Config config = Config.LoadConfig(configPath);
+				Config config = Config.LoadConfig();
 
 				client = new SshClient(config.sshHost, config.sshPort, config.sshUsername, config.sshPassword);
 				client.Connect();
 
-				foreach (var portForward in config.portForwards)
+				foreach (PortForwardConfig portForward in config.portForwards)
 				{
 					port = new ForwardedPortRemote(portForward.remotePort, portForward.localAddress, portForward.localPort);
 					client.AddForwardedPort(port);

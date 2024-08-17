@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
@@ -13,19 +14,35 @@ namespace ReverseTunnelService
 
 		public List<PortForwardConfig> portForwards { get; set; }
 
-		public static Config LoadConfig(string path)
+		public static string GetPath()
 		{
-			using (StreamReader r = new StreamReader(path))
+			string path = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+			path = Path.Combine(path, "coxy2001", "Reverse Tunnel");
+			if (!Directory.Exists(path))
+			{
+				Directory.CreateDirectory(path);
+			}
+			return path;
+		}
+
+		public static string GetConfigPath()
+		{
+			return Path.Combine(GetPath(), "config.json");
+		}
+
+		public static Config LoadConfig()
+		{
+			using (StreamReader r = new StreamReader(GetConfigPath()))
 			{
 				string json = r.ReadToEnd();
 				return JsonSerializer.Deserialize<Config>(json);
 			}
 		}
 
-		public static void SaveConfig(Config config)
+		public void SaveConfig()
 		{
-			string jsonString = JsonSerializer.Serialize(config, new JsonSerializerOptions() { WriteIndented = true });
-			using (StreamWriter outputFile = new StreamWriter("config.json"))
+			string jsonString = JsonSerializer.Serialize(this, new JsonSerializerOptions() { WriteIndented = true });
+			using (StreamWriter outputFile = new StreamWriter(GetConfigPath()))
 			{
 				outputFile.WriteLine(jsonString);
 			}
@@ -40,7 +57,7 @@ namespace ReverseTunnelService
 
 		public override string ToString()
 		{
-			return $"{this.remotePort}:{this.localAddress}:{this.localPort}";
+			return $"{remotePort}:{localAddress}:{localPort}";
 		}
 	}
 }

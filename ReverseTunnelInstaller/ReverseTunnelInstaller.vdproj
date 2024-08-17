@@ -3520,7 +3520,7 @@
             "SourcePath" = "8:..\\ReverseTunnel\\config.json"
             "TargetName" = "8:config.json"
             "Tag" = "8:"
-            "Folder" = "8:_A4DFB6DA05044E49A0E2CB3F45AEFB92"
+            "Folder" = "8:_0F2BD55973944C1AA327013B3AC5DC5B"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -6672,6 +6672,18 @@
         }
         "Folder"
         {
+            "{994432C3-9487-495D-8656-3E829A8DBDDE}:_0F2BD55973944C1AA327013B3AC5DC5B"
+            {
+            "DefaultLocation" = "8:[CommonAppDataFolder][Manufacturer]\\[ProductName]"
+            "Name" = "8:Program Data"
+            "AlwaysCreate" = "11:FALSE"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Property" = "8:PROGRAMDATA"
+                "Folders"
+                {
+                }
+            }
             "{3C67513D-01DD-4637-8A68-80971EB9504F}:_A4DFB6DA05044E49A0E2CB3F45AEFB92"
             {
             "DefaultLocation" = "8:[ProgramFilesFolder][Manufacturer]\\[ProductName]"
@@ -6723,7 +6735,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Reverse Tunnel"
         "ProductCode" = "8:{AF1C22E9-2D65-414D-BB16-D2DA39F1004C}"
-        "PackageCode" = "8:{1830F132-0C95-4F35-B707-2295D09CCBCF}"
+        "PackageCode" = "8:{0A5EB417-F9B1-4B8D-B2F6-0693A8AE3D4A}"
         "UpgradeCode" = "8:{B6FC42A6-7150-485F-AAFE-7B038A5E5471}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
