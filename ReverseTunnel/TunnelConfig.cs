@@ -1,5 +1,6 @@
 ﻿using ReverseTunnelService;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.ServiceProcess;
 using System.Threading.Tasks;
@@ -15,15 +16,27 @@ namespace ReverseTunnel
 		{
 			InitializeComponent();
 
-			config = Config.LoadConfig("config.json");
+			try
+			{
+				config = Config.LoadConfig();
 
-			textBoxSshHost.Text = config.sshHost;
-			numericSshPort.Value = config.sshPort;
-			textBoxSshUsername.Text = config.sshUsername;
-			textBoxSshPassword.Text = config.sshPassword;
-			numericRemotePort.Value = config.remotePort;
-			textBoxLocalAddress.Text = config.localAddress;
-			numericLocalPort.Value = config.localPort;
+				textBoxSshHost.Text = config.sshHost;
+				numericSshPort.Value = config.sshPort;
+				textBoxSshUsername.Text = config.sshUsername;
+				textBoxSshPassword.Text = config.sshPassword;
+
+				setPortForwardEnabled(false);
+
+				foreach (object item in config.portForwards)
+				{
+					listBox1.Items.Add(item);
+				}
+			}
+			catch (Exception)
+			{
+				MessageBox.Show("Failed to load config");
+				config = new Config();
+			}
 		}
 
 		private string getLastError()
@@ -55,23 +68,26 @@ namespace ReverseTunnel
 			return string.Empty;
 		}
 
-		private void buttonToggleConnection_Click(object sender, EventArgs e)
+		private void buttonApply_Click(object sender, EventArgs e)
 		{
 			config.sshHost = textBoxSshHost.Text;
 			config.sshPort = (int)numericSshPort.Value;
 			config.sshUsername = textBoxSshUsername.Text;
 			config.sshPassword = textBoxSshPassword.Text;
-			config.remotePort = (uint)numericRemotePort.Value;
-			config.localAddress = textBoxLocalAddress.Text;
-			config.localPort = (uint)numericLocalPort.Value;
 
-			Config.SaveConfig(config);
+			config.portForwards = new List<PortForwardConfig>();
+			foreach (PortForwardConfig item in listBox1.Items)
+			{
+				config.portForwards.Add(item);
+			}
+
+			config.SaveConfig();
 
 			Task.Run(() =>
 			{
-				buttonToggleConnection.Text = "Restarting...";
-				buttonToggleConnection.Enabled = false;
-				buttonToggleConnection.Refresh();
+				buttonApply.Text = "Restarting...";
+				buttonApply.Enabled = false;
+				buttonApply.Refresh();
 
 				ServiceController controller = new ServiceController("ReverseTunnelService");
 
@@ -80,31 +96,92 @@ namespace ReverseTunnel
 					if (controller.Status == ServiceControllerStatus.Running)
 					{
 						controller.Stop();
-						controller.WaitForStatus(ServiceControllerStatus.Stopped);
+						controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
 					}
 					controller.Start();
-					controller.WaitForStatus(ServiceControllerStatus.Running);
+					controller.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
 
 					string lastError = getLastError();
 					if (lastError.Length > 0)
 					{
 						MessageBox.Show(lastError);
-						buttonToggleConnection.Text = "Failed";
+						buttonApply.Text = "Failed";
 					}
 					else
 					{
-						buttonToggleConnection.Text = "Apply";
+						buttonApply.Text = "Apply";
 					}
 				}
 				else
 				{
-					buttonToggleConnection.Text = "Service not started";
+					buttonApply.Text = "Service not started";
 				}
 
-				buttonToggleConnection.Enabled = true;
-				buttonToggleConnection.Refresh();
+				buttonApply.Enabled = true;
+				buttonApply.Refresh();
 			});
 		}
 
+		private void setPortForwardEnabled(bool value)
+		{
+			numericRemotePort.Enabled = value;
+			textBoxLocalAddress.Enabled = value;
+			numericLocalPort.Enabled = value;
+			buttonSave.Enabled = value;
+			buttonDelete.Enabled = value;
+		}
+
+		private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			PortForwardConfig selected = (PortForwardConfig)listBox1.SelectedItem;
+			if (selected != null)
+			{
+				numericRemotePort.Value = selected.remotePort;
+				textBoxLocalAddress.Text = selected.localAddress;
+				numericLocalPort.Value = selected.localPort;
+				setPortForwardEnabled(true);
+			}
+		}
+
+		private void buttonSave_Click(object sender, EventArgs e)
+		{
+			int index = listBox1.SelectedIndex;
+			PortForwardConfig selected = (PortForwardConfig)listBox1.Items[index];
+			selected.remotePort = (uint)numericRemotePort.Value;
+			selected.localAddress = textBoxLocalAddress.Text;
+			selected.localPort = (uint)numericLocalPort.Value;
+			listBox1.Items[index] = selected;
+		}
+
+		private void buttonNew_Click(object sender, EventArgs e)
+		{
+			listBox1.Items.Add(new PortForwardConfig()
+			{
+				remotePort = 80,
+				localAddress = "127.0.0.1",
+				localPort = 80
+			});
+			listBox1.SelectedIndex = listBox1.Items.Count - 1;
+			setPortForwardEnabled(true);
+		}
+
+		private void buttonDelete_Click(object sender, EventArgs e)
+		{
+			int index = listBox1.SelectedIndex;
+			listBox1.Items.RemoveAt(index);
+			if (index < listBox1.Items.Count)
+			{
+				listBox1.SelectedIndex = index;
+
+			}
+			else if (listBox1.Items.Count > 0)
+			{
+				listBox1.SelectedIndex = listBox1.Items.Count - 1;
+			}
+			else
+			{
+				setPortForwardEnabled(false);
+			}
+		}
 	}
 }
