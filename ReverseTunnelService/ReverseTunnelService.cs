@@ -2,13 +2,14 @@
 using System;
 using System.Diagnostics;
 using System.ServiceProcess;
+using System.Timers;
 
 namespace ReverseTunnelService
 {
 	public partial class ReverseTunnelService : ServiceBase
 	{
 		private SshClient client;
-		private ForwardedPortRemote port;
+		private Timer timer;
 
 		public ReverseTunnelService()
 		{
@@ -22,12 +23,15 @@ namespace ReverseTunnelService
 			{
 				Config config = Config.LoadConfig();
 
-				client = new SshClient(config.sshHost, config.sshPort, config.sshUsername, config.sshPassword);
+				client = new SshClient(config.sshHost, config.sshPort, config.sshUsername, config.sshPassword)
+				{
+					KeepAliveInterval = TimeSpan.FromMinutes(1)
+				};
 				client.Connect();
 
 				foreach (PortForwardConfig portForward in config.portForwards)
 				{
-					port = new ForwardedPortRemote(portForward.remotePort, portForward.localAddress, portForward.localPort);
+					ForwardedPortRemote port = new ForwardedPortRemote(portForward.remotePort, portForward.localAddress, portForward.localPort);
 					client.AddForwardedPort(port);
 					port.Start();
 				}
@@ -46,13 +50,22 @@ namespace ReverseTunnelService
 			LogEvent("Disconnecting", EventLogEntryType.Information);
 			if (client != null && client.IsConnected)
 			{
-				port.Stop();
 				client.Disconnect();
 				LogEvent("Disconnect Success", EventLogEntryType.Information);
 			}
 			else
 			{
 				LogEvent("Not connected", EventLogEntryType.Information);
+			}
+		}
+
+		private void CheckConnection(object sender, ElapsedEventArgs e)
+		{
+			LogEvent("Checking connection", EventLogEntryType.Information);
+
+			if (client == null || !client.IsConnected)
+			{
+				Connect();
 			}
 		}
 
@@ -74,6 +87,11 @@ namespace ReverseTunnelService
 			}
 
 			Connect();
+
+			timer = new Timer(TimeSpan.FromMinutes(5).TotalMilliseconds);
+			timer.Elapsed += new ElapsedEventHandler(CheckConnection);
+			timer.AutoReset = true;
+			timer.Start();
 		}
 
 		protected override void OnContinue()
